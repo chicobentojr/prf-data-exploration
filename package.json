@@ -1,0 +1,19 @@
+{
+  "name": "prf-data-exploration",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chicobentojr/prf-data-exploration.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chicobentojr/prf-data-exploration/issues"
+  },
+  "homepage": "https://github.com/chicobentojr/prf-data-exploration#readme"
+}
