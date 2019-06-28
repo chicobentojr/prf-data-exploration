@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/chicobentojr/prf-data-exploration/issues"
   },
-  "homepage": "https://github.com/chicobentojr/prf-data-exploration#readme"
+  "homepage": "https://github.com/chicobentojr/prf-data-exploration#readme",
+  "dependencies": {
+    "papaparse": "^5.0.0"
+  }
 }
