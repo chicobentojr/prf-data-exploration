@@ -14,8 +14,16 @@ body {
     bottom: 0%;
     left: 0%;
     position: fixed;
-    width: 10em;
+    min-width: 20em;
     margin: 1em;
     padding: 1em;
     background-color: #fff;
+    max-height: 30em;
+    overflow-y: auto;
+}
+
+#bar-chart {
+    height: 200px;
+    width: 15em;
+    /* background-color: black; */
 }
