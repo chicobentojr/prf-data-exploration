@@ -68,13 +68,6 @@ const addFiltersElements = obj => {
 };
 
 const addChartFilter = field => {
-  // console.log("addding filter");
-
-  // var ndx = crossfilter(data);
-  // // var all = ndx.groupAll();
-  // var all = dataFiltered.groupAll()
-
-  // console.log(all);
 
   charts[field] = dc.barChart(`#bar-chart-${field}`);
 
@@ -82,9 +75,6 @@ const addChartFilter = field => {
     return d[field];
   });
   var fluctuationGroup = fluctuation.group().reduceCount();
-
-  // console.log('fluctuation :', fluctuation);
-  // console.log('fluctuationGroup :', fluctuationGroup.top(Infinity));
 
   const max = Math.max.apply(Math, fluctuationGroup.top(Infinity).map(x => x.key))
   const min = Math.min.apply(Math, fluctuationGroup.top(Infinity).map(x => x.key))
@@ -96,13 +86,12 @@ const addChartFilter = field => {
     .dimension(fluctuation)
     .group(fluctuationGroup)
     .elasticY(true)
-    // .filterPrinter(function (filters) {
-    //   // console.log(filters);
-    //   rd = fluctuation.filter(filters[0]);
-    //   nd = rd.top(Infinity);
-    //   updateData(nd);
-    //   return filters;
-    // })
+    .filterPrinter(function (filters) {
+      rd = fluctuation.filter(filters[0]);
+      nd = rd.top(Infinity);
+      updateData(nd);
+      return filters;
+    })
     .x(
       d3
         .scaleLinear()
@@ -125,11 +114,116 @@ const dataLoaded = (map, points) => {
   dataFilteredAll = dataFiltered.groupAll();
   markers = convertPointsToMarkers(points);
 
-  markersLayerGroup = L.layerGroup(markers).addTo(map);
+  // markersLayerGroup = L.layerGroup(markers).addTo(map);
 
   // addHeatMap(map, data)
-  // plotFilters(map, points)
+  plotStates(map, points);
 };
+
+const plotStates = (map, points) => {
+  console.log('plotting cloropleth map')
+  d3.json('/src/utils/brasil-estados.geojson').then((geoStates) => {
+    console.log('data :', geoStates);
+
+    console.log('feat', geoStates.features[0])
+    console.log('geocor :', geoStates.features[0].geometry.coordinates[0]);
+    console.log('geocor :', geoStates.features[0].geometry.coordinates[587]);
+
+    geoStates.features = geoStates.features.map(f => {
+      return {
+        ...f,
+        geometry: { ...f.geometry, type: "Polygon", coordinates: [f.geometry.coordinates] }
+      }
+    })
+
+    console.log('feat', geoStates.features[0])
+
+
+
+    var ufDimension = dataFiltered.dimension(function (d) {
+      return d['uf'];
+    });
+    var ufGroup = ufDimension.group().reduceCount().top(Infinity);
+    console.log('ufGroup :', ufGroup);
+
+    var choroMap;
+
+    var info = L.control();
+
+    const reset = (e) => {
+      choroMap.resetStyle(e.target)
+      info.update()
+    }
+
+
+    info.onAdd = function (map) {
+      this._div = L.DomUtil.create('div', 'state-info');
+      this.update();
+      return this._div;
+    };
+
+    info.update = function (props) {
+      const state = props ? props.Name : ""
+      const found = ufGroup.find(uf => uf.key == state)
+      const v = found ? found.value : 0
+
+      this._div.innerHTML =
+        '<h4>Acidentes por Estado</h4>' + (props ?
+          '<b>' + props.Name + '</b> ' + props.Description + '<br>' +
+          '<b>Quantidade: </b>' + v
+          : 'Selecione um estado');
+    };
+
+    info.addTo(map);
+
+    choroMap = L.geoJson(geoStates, {
+      style: (f) => {
+        const getColor = () => {
+          const state = f.properties.Name
+          const found = ufGroup.find(uf => uf.key == state)
+          const max = ufGroup[0].value
+          const min = ufGroup[ufGroup.length - 1].value
+          const v = found ? found.value : min
+
+          const c = d3.scaleLinear([min, max], ["#FFEDA0", "#800026"])
+
+          return c(v)
+        }
+        return {
+          fillColor: getColor(),
+          weight: 2,
+          opacity: 1,
+          color: 'white',
+          dashArray: '3',
+          fillOpacity: 0.7
+        }
+      },
+      onEachFeature: (feature, layer) => {
+        const high = (e) => {
+          var layer = e.target;
+          layer.setStyle({
+            weight: 5,
+            color: '#666',
+            dashArray: '',
+            fillOpacity: 0.7
+          }).bringToFront();
+          info.update(layer.feature.properties)
+        }
+
+        const zoom = (e) => {
+          map.fitBounds(e.target.getBounds());
+        }
+
+        layer.on({
+          mouseover: high,
+          mouseout: reset,
+          click: zoom
+        })
+      }
+    }).addTo(map);
+
+  })
+}
 
 const addHeatMap = (map, data) => {
   const heatPoints = data.map(r => {
