@@ -14,8 +14,10 @@ let dataFilteredAll = null;
 let charts = {};
 let dimensions = {};
 let dimensionsGroup = {};
+
 let choroMap = null;
 let geoStates = null;
+let geoCities = null;
 
 let infoDetailControl = null;
 
@@ -55,9 +57,17 @@ const convertPointsToMarkers = points => {
 const resetFilter = (key) => {
   charts[key].filterAll();
   const newPoints = dataFiltered.dimension(d => d).top(Infinity)
-  updateData(newPoints)
+  refreshPoints(newPoints)
 }
 
+const resetSelection = () => {
+  if (markersLayerGroup) {
+    markersLayerGroup.clearLayers();
+  }
+  selectedState = ""
+  updateFilters(data)
+  plotStates()
+}
 
 const addFiltersElements = () => {
   FILTERS.map((k, i) => {
@@ -99,7 +109,7 @@ const addChartFilter = field => {
     .filterPrinter(function (filters) {
       rd = dimensions[field].filter(filters[0]);
       nd = rd.top(Infinity);
-      updateData(nd);
+      refreshPoints(nd);
       return filters;
     })
     .x(
@@ -111,8 +121,7 @@ const addChartFilter = field => {
   charts[field].xAxis().tickFormat(function (v) {
     return v;
   });
-  charts[field].yAxis().ticks(5);
-
+  charts[field].yAxis().ticks(5); ''
   charts[field].render();
 };
 
@@ -126,10 +135,10 @@ const dataLoaded = (map, points) => {
   // markersLayerGroup = L.layerGroup(markers).addTo(map);
 
   // addHeatMap(map, data)
-  loadState(map);
+  loadGeoData(map);
 };
 
-const loadState = (map) => {
+const loadGeoData = (map) => {
   console.log('plotting cloropleth map')
   d3.json('/src/utils/brasil-estados.geojson').then((states) => {
     console.log('data :', states);
@@ -152,16 +161,30 @@ const loadState = (map) => {
 
     infoDetailControl.update = function (props) {
       this._div.innerHTML =
-        '<h4>Acidentes por Estado</h4>' + (props ?
-          '<b>' + props.Name + '</b> ' + props.Description + '<br>' +
-          '<b>Quantidade: </b>' + props.Value
-          : 'Selecione um estado');
+        `<h4>Acidentes por Estado</h4> 
+          ${(props ?
+          `<b>${props.Name}</b> ${props.Description}<br>
+           <b>Quantidade: </b> ${props.Value}`
+          : (selectedState ? `${selectedState} selecionado` : 'Selecione um estado'))}`;
     };
 
     infoDetailControl.addTo(map);
 
     plotStates(dataFiltered)
 
+  })
+  d3.json('/src/utils/brasil-municipios.geojson').then((cities) => {
+    console.log('cities :', cities);
+    console.log('cities feat', cities.features[0])
+    cities.features = cities.features.map(f => {
+      return {
+        ...f,
+        geometry: { ...f.geometry, type: "Polygon", coordinates: [f.geometry.coordinates] }
+      }
+    })
+    geoCities = cities;
+
+    console.log('geoCities :', geoCities);
   })
 }
 
@@ -172,7 +195,6 @@ const updateFilters = (newData) => {
   FILTERS.forEach(f => {
     const group = dataFiltered.dimension(d => d[f]).group().reduceCount()
     charts[f].group(group)
-
   })
   console.log('dataFilterd', dataFiltered)
   dc.redrawAll();
@@ -201,6 +223,8 @@ const onStateSelected = (e) => {
   map.fitBounds(e.target.getBounds());
   dc.redrawAll();
   plotStates()
+
+  refreshPoints(dataFiltered.allFiltered())
 }
 
 const onMouseOverState = (e) => {
@@ -230,16 +254,22 @@ const onMouseOutState = (e) => {
 }
 
 const plotStates = (data = dataFiltered) => {
-  // var ufDimension = data.dimension(function (d) {
-  //   return d['uf'];
-  // });
-  // var ufGroup = dimensionsGroup['uf'].top(Infinity)
+  if (selectedState) {
+    map.removeLayer(choroMap)
+    return;
+  }
+
+
+  const geoFeatures = selectedState ? geoStates.features.filter(feat =>
+    feat.properties.Name === selectedState
+  ) : geoStates.features
 
   if (choroMap) {
     map.removeLayer(choroMap)
   }
 
-  choroMap = L.geoJson(geoStates, {
+
+  choroMap = L.geoJson({ ...geoStates, features: geoFeatures }, {
     style: (f) => {
       const getColor = () => {
         const state = f.properties.Name
@@ -318,16 +348,22 @@ const plotMap = () => {
   return map;
 };
 
-const updateData = newPoints => {
-  // markersLayerGroup.clearLayers();
+const refreshPoints = newPoints => {
+  if (markersLayerGroup) {
+    markersLayerGroup.clearLayers();
+  }
 
-  markers = convertPointsToMarkers(newPoints);
+  if (selectedState) {
 
-  newDataFiltered = crossfilter(newPoints)
+    const filteredPoints = newPoints.filter(p => p.uf === selectedState)
 
-  plotStates(newDataFiltered)
+    markers = convertPointsToMarkers(filteredPoints);
+    markersLayerGroup = L.layerGroup(markers).addTo(map);
 
-  // markersLayerGroup = L.layerGroup(markers).addTo(map);
+  } else {
+    newDataFiltered = crossfilter(newPoints)
+    plotStates(newDataFiltered)
+  }
 };
 
 const main = () => {
