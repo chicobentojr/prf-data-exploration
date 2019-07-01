@@ -4,6 +4,33 @@ const FILTERS = [
   'feridos', 'veiculos'
 ]
 
+const FIELDS = {
+  "data_inversa": "Data",
+  "horario": "Horário",
+  "dia_semana": "Dia",
+  "uf": "UF",
+  "br": "BR",
+  "km": "KM",
+  "municipio": "Município",
+  "causa_acidente": "Causa",
+  "tipo_acidente": "Tipo",
+  "classificacao_acidente": "Classificação",
+  "fase_dia": "Fase do dia",
+  "condicao_metereologica": "Tempo",
+  "tipo_pista": "Tipo da pista",
+  "tracado_via": "Via",
+  "pessoas": "Pessoas",
+  "mortos": "Mortos",
+  "feridos_leves": "Feridos leves",
+  "feridos_graves": "Feridos graves",
+  "ilesos": "Ilesos",
+  "ignorados": "Ignorados",
+  "feridos": "Feridos",
+  "veiculos": "Veículos",
+  "regional": "Regional",
+  "delegacia": "Delegacia"
+}
+
 let map = null;
 let markers = null;
 let markersLayerGroup = null;
@@ -41,8 +68,8 @@ const loadData = map => {
 };
 
 const getPointDetails = point => {
-  return Object.keys(point).reduce((a, k) => {
-    return `${a}${k}: ${point[k]}<br>`;
+  return Object.keys(FIELDS).reduce((a, k) => {
+    return `${a}${FIELDS[k]}: ${point[k]}<br>`;
   }, "");
 };
 
