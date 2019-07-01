@@ -1,3 +1,9 @@
+const FILTERS = [
+  'pessoas', 'mortos', 'feridos_leves',
+  'feridos_graves', 'ilesos', 'ignorados',
+  'feridos', 'veiculos'
+]
+
 let map = null;
 let markers = null;
 let markersLayerGroup = null;
@@ -5,9 +11,17 @@ let data = null;
 let dataFiltered = null;
 let dataFilteredAll = null;
 
-const filtersChart = document.getElementById("filters-chart");
-
 let charts = {};
+let dimensions = {};
+let dimensionsGroup = {};
+let choroMap = null;
+let geoStates = null;
+
+let infoDetailControl = null;
+
+let selectedState = "";
+
+const filtersChart = document.getElementById("filters-chart");
 
 const loadData = map => {
   console.log("loading data");
@@ -19,7 +33,7 @@ const loadData = map => {
       console.log("Data Loaded");
       console.log(results);
       dataLoaded(map, results.data.slice(0, 1000));
-      addFiltersElements(results.data[0]);
+      addFiltersElements();
     }
   });
 };
@@ -30,40 +44,36 @@ const getPointDetails = point => {
   }, "");
 };
 
-const convertPointsToMarkers = points =>
-  points.map(p =>
-    L.circleMarker([p.latitude, p.longitude], {
+const convertPointsToMarkers = points => {
+  return points.map(p =>
+    L.circleMarker([p.latitude.replace(',', '.'), p.longitude.replace(',', '.')], {
       color: "#3388ff"
     }).bindPopup(getPointDetails(p))
   );
+}
 
 const resetFilter = (key) => {
   charts[key].filterAll();
-
   const newPoints = dataFiltered.dimension(d => d).top(Infinity)
   updateData(newPoints)
 }
 
 
-const addFiltersElements = obj => {
-  const keys = Object.keys(obj)
-  const notFiltered = ['id', 'latitude', 'longitude']
-
-  keys.map((k, i) => {
-    if (notFiltered.indexOf(k) === -1 && !isNaN(obj[k])) {
-      filtersChart.innerHTML += `
-                <div>
-                    <h4>${k}</h4>
-                    <div id='bar-chart-${k}' class='.chart'>
-                      <a class='reset' href='javascript:resetFilter("${k}");'>Reset</a>
+const addFiltersElements = () => {
+  FILTERS.map((k, i) => {
+    filtersChart.innerHTML += `
+                <div class='chart'>
+                    <h4>${k} <a class='reset' href='javascript:resetFilter("${k}");'>reset</a></h4>
+                    <div id='bar-chart-${k}'>
                     </div>
                 </div>
             `;
-      setTimeout(function () {
-        addChartFilter(k);
-      }, 0);
-    }
+    setTimeout(function () {
+      addChartFilter(k);
+    }, 0);
   });
+  dimensions['uf'] = dataFiltered.dimension(d => d['uf'])
+  dimensionsGroup['uf'] = dimensions['uf'].group().reduceCount();
   dc.renderAll();
 };
 
@@ -71,23 +81,23 @@ const addChartFilter = field => {
 
   charts[field] = dc.barChart(`#bar-chart-${field}`);
 
-  var fluctuation = dataFiltered.dimension(function (d) {
+  dimensions[field] = dataFiltered.dimension(function (d) {
     return d[field];
   });
-  var fluctuationGroup = fluctuation.group().reduceCount();
+  dimensionsGroup[field] = dimensions[field].group().reduceCount();
 
-  const max = Math.max.apply(Math, fluctuationGroup.top(Infinity).map(x => x.key))
-  const min = Math.min.apply(Math, fluctuationGroup.top(Infinity).map(x => x.key))
+  const max = Math.max.apply(Math, dimensionsGroup[field].top(Infinity).map(x => x.key))
+  const min = Math.min.apply(Math, dimensionsGroup[field].top(Infinity).map(x => x.key))
 
-  charts[field] /* dc.barChart('#volume-month-chart', 'chartGroup') */
+  charts[field]
     .width(300)
     .height(180)
     .margins({ top: 10, right: 50, bottom: 30, left: 40 })
-    .dimension(fluctuation)
-    .group(fluctuationGroup)
+    .dimension(dimensions[field])
+    .group(dimensionsGroup[field])
     .elasticY(true)
     .filterPrinter(function (filters) {
-      rd = fluctuation.filter(filters[0]);
+      rd = dimensions[field].filter(filters[0]);
       nd = rd.top(Infinity);
       updateData(nd);
       return filters;
@@ -107,122 +117,166 @@ const addChartFilter = field => {
 };
 
 
-
 const dataLoaded = (map, points) => {
   data = points;
   dataFiltered = crossfilter(data);
-  dataFilteredAll = dataFiltered.groupAll();
+
   markers = convertPointsToMarkers(points);
 
   // markersLayerGroup = L.layerGroup(markers).addTo(map);
 
   // addHeatMap(map, data)
-  plotStates(map, points);
+  loadState(map);
 };
 
-const plotStates = (map, points) => {
+const loadState = (map) => {
   console.log('plotting cloropleth map')
-  d3.json('/src/utils/brasil-estados.geojson').then((geoStates) => {
-    console.log('data :', geoStates);
-
-    console.log('feat', geoStates.features[0])
-    console.log('geocor :', geoStates.features[0].geometry.coordinates[0]);
-    console.log('geocor :', geoStates.features[0].geometry.coordinates[587]);
-
-    geoStates.features = geoStates.features.map(f => {
+  d3.json('/src/utils/brasil-estados.geojson').then((states) => {
+    console.log('data :', states);
+    console.log('feat', states.features[0])
+    states.features = states.features.map(f => {
       return {
         ...f,
         geometry: { ...f.geometry, type: "Polygon", coordinates: [f.geometry.coordinates] }
       }
     })
+    geoStates = states;
 
-    console.log('feat', geoStates.features[0])
+    infoDetailControl = L.control();
 
-
-
-    var ufDimension = dataFiltered.dimension(function (d) {
-      return d['uf'];
-    });
-    var ufGroup = ufDimension.group().reduceCount().top(Infinity);
-    console.log('ufGroup :', ufGroup);
-
-    var choroMap;
-
-    var info = L.control();
-
-    const reset = (e) => {
-      choroMap.resetStyle(e.target)
-      info.update()
-    }
-
-
-    info.onAdd = function (map) {
+    infoDetailControl.onAdd = function (map) {
       this._div = L.DomUtil.create('div', 'state-info');
       this.update();
       return this._div;
     };
 
-    info.update = function (props) {
-      const state = props ? props.Name : ""
-      const found = ufGroup.find(uf => uf.key == state)
-      const v = found ? found.value : 0
-
+    infoDetailControl.update = function (props) {
       this._div.innerHTML =
         '<h4>Acidentes por Estado</h4>' + (props ?
           '<b>' + props.Name + '</b> ' + props.Description + '<br>' +
-          '<b>Quantidade: </b>' + v
+          '<b>Quantidade: </b>' + props.Value
           : 'Selecione um estado');
     };
 
-    info.addTo(map);
+    infoDetailControl.addTo(map);
 
-    choroMap = L.geoJson(geoStates, {
-      style: (f) => {
-        const getColor = () => {
-          const state = f.properties.Name
-          const found = ufGroup.find(uf => uf.key == state)
-          const max = ufGroup[0].value
-          const min = ufGroup[ufGroup.length - 1].value
-          const v = found ? found.value : min
-
-          const c = d3.scaleLinear([min, max], ["#FFEDA0", "#800026"])
-
-          return c(v)
-        }
-        return {
-          fillColor: getColor(),
-          weight: 2,
-          opacity: 1,
-          color: 'white',
-          dashArray: '3',
-          fillOpacity: 0.7
-        }
-      },
-      onEachFeature: (feature, layer) => {
-        const high = (e) => {
-          var layer = e.target;
-          layer.setStyle({
-            weight: 5,
-            color: '#666',
-            dashArray: '',
-            fillOpacity: 0.7
-          }).bringToFront();
-          info.update(layer.feature.properties)
-        }
-
-        const zoom = (e) => {
-          map.fitBounds(e.target.getBounds());
-        }
-
-        layer.on({
-          mouseover: high,
-          mouseout: reset,
-          click: zoom
-        })
-      }
-    }).addTo(map);
+    plotStates(dataFiltered)
 
   })
+}
+
+
+const updateFilters = (newData) => {
+  console.log('dataFilterd', dataFiltered.allFiltered().length)
+  dataFiltered = crossfilter(newData)
+  FILTERS.forEach(f => {
+    const group = dataFiltered.dimension(d => d[f]).group().reduceCount()
+    charts[f].group(group)
+
+  })
+  console.log('dataFilterd', dataFiltered)
+  dc.redrawAll();
+
+}
+
+const onStateSelected = (e) => {
+  console.log('zoom clicked');
+  console.log('dataFiltered :', dataFiltered.allFiltered().length);
+
+  const state = e.target.feature.properties.Name
+
+  updateFilters(data);
+
+  if (selectedState === state) {
+    selectedState = null;
+  }
+  else {
+    selectedState = state;
+  }
+
+  dataFiltered.dimension(d => d['uf']).filter(selectedState)
+
+  console.log('dataFiltered :', dataFiltered.size());
+
+  map.fitBounds(e.target.getBounds());
+  dc.redrawAll();
+  plotStates()
+}
+
+const onMouseOverState = (e) => {
+  var layer = e.target;
+  const props = layer.feature.properties
+
+  layer.setStyle({
+    weight: 5,
+    color: '#666',
+    dashArray: '',
+    fillOpacity: 0.7
+  }).bringToFront();
+
+  // const ufGroup = dataFiltered.dimension(d => d['uf']).group().reduceCount().top(Infinity);
+  const ufGroup = dimensionsGroup['uf'].top(Infinity);
+
+  const state = props ? props.Name : ""
+  const found = ufGroup.find(uf => uf.key == state)
+  const Value = found ? found.value : 0
+
+  infoDetailControl.update({ ...layer.feature.properties, Value })
+}
+
+const onMouseOutState = (e) => {
+  choroMap.resetStyle(e.target)
+  infoDetailControl.update()
+}
+
+const plotStates = (data = dataFiltered) => {
+  // var ufDimension = data.dimension(function (d) {
+  //   return d['uf'];
+  // });
+  // var ufGroup = dimensionsGroup['uf'].top(Infinity)
+
+  if (choroMap) {
+    map.removeLayer(choroMap)
+  }
+
+  choroMap = L.geoJson(geoStates, {
+    style: (f) => {
+      const getColor = () => {
+        const state = f.properties.Name
+
+        if (selectedState) {
+          return state === selectedState ? "blue" : "grey"
+        }
+
+        var ufGroup = dimensionsGroup['uf'].top(Infinity)
+
+
+        const found = ufGroup.find(uf => uf.key == state)
+        const max = ufGroup[0].value
+        const min = ufGroup[ufGroup.length - 1].value
+        const v = found ? found.value : min
+
+        const c = d3.scaleLinear([min, max], ["#FFEDA0", "#800026"])
+
+        return c(v)
+      }
+      return {
+        fillColor: getColor(),
+        weight: 2,
+        opacity: 1,
+        color: 'white',
+        dashArray: '3',
+        fillOpacity: 0.7
+      }
+    },
+    onEachFeature: (feature, layer) => {
+      layer.on({
+        mouseover: onMouseOverState,
+        mouseout: onMouseOutState,
+        click: onStateSelected
+      })
+    }
+  }).addTo(map);
 }
 
 const addHeatMap = (map, data) => {
@@ -248,19 +302,32 @@ const plotMap = () => {
     position: 'bottomright'
   }).addTo(map);
 
+  map.on("zoomend", (e) => {
+    const zoomValue = e.target._zoom
+    console.log('zoomend', zoomValue)
+
+    // if (zoomValue <= 5) {
+    //   dataFiltered = crossfilter(data);
+    //   // dataFiltered.add(data);
+    //   // console.log('dataFiltered', dataFiltered.size())
+    //   // dc.redrawAll();
+    //   plotStates(dataFiltered)
+    // }
+  })
+
   return map;
 };
 
 const updateData = newPoints => {
-  // console.log(newPoints);
-
-  markersLayerGroup.clearLayers();
+  // markersLayerGroup.clearLayers();
 
   markers = convertPointsToMarkers(newPoints);
 
-  markersLayerGroup = L.layerGroup(markers).addTo(map);
+  newDataFiltered = crossfilter(newPoints)
 
-  // console.log(map);
+  plotStates(newDataFiltered)
+
+  // markersLayerGroup = L.layerGroup(markers).addTo(map);
 };
 
 const main = () => {
