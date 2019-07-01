@@ -1,8 +1,11 @@
-const FILTERS = [
+const BAR_FILTERS = [
   'pessoas', 'mortos', 'feridos_leves',
   'feridos_graves', 'ilesos', 'ignorados',
   'feridos', 'veiculos'
 ]
+
+const PIE_FILTERS = ['dia_semana', 'causa_acidente']
+
 
 const FIELDS = {
   "data_inversa": "Data",
@@ -62,7 +65,8 @@ const loadData = map => {
       console.log("Data Loaded");
       console.log(results);
       dataLoaded(map, results.data.slice(0, 1000));
-      addFiltersElements();
+      addPieFiltersElements();
+      addBarFiltersElements();
     }
   });
 };
@@ -96,8 +100,8 @@ const resetSelection = () => {
   plotStates()
 }
 
-const addFiltersElements = () => {
-  FILTERS.map((k, i) => {
+const addBarFiltersElements = () => {
+  BAR_FILTERS.map((k, i) => {
     filtersChart.innerHTML += `
                 <div class='chart'>
                     <h4>${k} <a class='reset' href='javascript:resetFilter("${k}");'>reset</a></h4>
@@ -106,7 +110,7 @@ const addFiltersElements = () => {
                 </div>
             `;
     setTimeout(function () {
-      addChartFilter(k);
+      addBarChartFilter(k);
     }, 0);
   });
   dimensions['uf'] = dataFiltered.dimension(d => d['uf'])
@@ -114,7 +118,25 @@ const addFiltersElements = () => {
   dc.renderAll();
 };
 
-const addChartFilter = field => {
+const addPieFiltersElements = () => {
+  PIE_FILTERS.forEach((k) => {
+    filtersChart.innerHTML += `
+                <div class='chart'>
+                    <h4>${k} <a class='reset' href='javascript:resetFilter("${k}");'>reset</a></h4>
+                    <div id='pie-chart-${k}'>
+                    </div>
+                </div>
+            `;
+    setTimeout(function () {
+      addPieChartFilter(k);
+    }, 0);
+  });
+  dimensions['uf'] = dataFiltered.dimension(d => d['uf'])
+  dimensionsGroup['uf'] = dimensions['uf'].group().reduceCount();
+  dc.renderAll();
+};
+
+const addBarChartFilter = field => {
 
   charts[field] = dc.barChart(`#bar-chart-${field}`);
 
@@ -149,6 +171,37 @@ const addChartFilter = field => {
     return v;
   });
   charts[field].yAxis().ticks(5); ''
+  charts[field].render();
+};
+
+const addPieChartFilter = field => {
+
+  charts[field] = dc.pieChart(`#pie-chart-${field}`);
+
+  dimensions[field] = dataFiltered.dimension(function (d) {
+    return d[field];
+  });
+  dimensionsGroup[field] = dimensions[field].group().reduceCount();
+
+  charts[field]
+    .cap(5)
+    .othersLabel('outros')
+    .width(300)
+    .height(180)
+    .radius(300)
+    .innerRadius(30)
+    // .label((g) => {
+    //   console.log(g)
+    //   return g.key.split('-')[0]
+    // })
+    .dimension(dimensions[field])
+    .group(dimensionsGroup[field])
+    .filterPrinter(function (filters) {
+      rd = dimensions[field].filter(filters[0]);
+      nd = rd.top(Infinity);
+      refreshPoints(nd);
+      return filters;
+    })
   charts[field].render();
 };
 
@@ -219,7 +272,7 @@ const loadGeoData = (map) => {
 const updateFilters = (newData) => {
   console.log('dataFilterd', dataFiltered.allFiltered().length)
   dataFiltered = crossfilter(newData)
-  FILTERS.forEach(f => {
+  BAR_FILTERS.forEach(f => {
     const group = dataFiltered.dimension(d => d[f]).group().reduceCount()
     charts[f].group(group)
   })
