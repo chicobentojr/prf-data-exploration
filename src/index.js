@@ -273,7 +273,7 @@ const dataLoaded = (map, points) => {
 
 const loadGeoData = (map) => {
   console.log('plotting cloropleth map')
-  d3.json('/src/utils/brasil-estados.geojson').then((states) => {
+  d3.json('src/utils/brasil-estados.geojson').then((states) => {
     console.log('data :', states);
     console.log('feat', states.features[0])
     states.features = states.features.map(f => {
@@ -306,7 +306,7 @@ const loadGeoData = (map) => {
     plotStates(dataFiltered)
 
   })
-  d3.json('/src/utils/brasil-municipios.geojson').then((cities) => {
+  d3.json('src/utils/brasil-municipios.geojson').then((cities) => {
     console.log('cities :', cities);
     console.log('cities feat', cities.features[0])
     cities.features = cities.features.map(f => {
