@@ -11,15 +11,26 @@ body {
 }
 
 #container {
-  bottom: 0%;
-  left: 0%;
+  top: 0em;
+  left: 0em;
   position: fixed;
   min-width: 20em;
-  margin: 1em;
+  margin: 0.5em;
   padding: 1em;
   background-color: #fff;
   max-height: 30em;
   overflow-y: auto;
+}
+
+#timeline-container {
+  bottom: 0%;
+  left: 0%;
+  position: fixed;
+  min-width: 100%;
+  padding: 0.5em;
+  margin: 0.5em;
+  background-color: #fff;
+  /* max-height: 12em; */
 }
 
 #bar-chart {

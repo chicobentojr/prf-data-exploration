@@ -1,41 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>PRF Data Explorator</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
+      integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+      crossorigin=""
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/dc/3.0.12/dc.min.css"
+      integrity="sha256-3HUYdVnJGYSMfUhwTp5ffSOloOQdnWNBlcpLwgcuOcw="
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="src/style.css" />
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <title>PRF Data Explorator</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
-    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
-    crossorigin="" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dc/3.0.12/dc.min.css"
-    integrity="sha256-3HUYdVnJGYSMfUhwTp5ffSOloOQdnWNBlcpLwgcuOcw=" crossorigin="anonymous" />
-  <link rel="stylesheet" href="src/style.css" />
-</head>
+  <body>
+    <div id="map"></div>
 
-<body>
-  <div id="map"></div>
-
-  <div id="container">
-    <h3>Menu <a href="javascript:resetSelection();">reset selection</a></h3>
-    <!-- <h4>Pessoas</h4>
+    <div id="container">
+      <h3>Menu <a href="javascript:resetSelection();">reset selection</a></h3>
+      <!-- <h4>Pessoas</h4>
         <div id="bar-chart"></div> -->
-    <div id="filters-chart"></div>
-  </div>
+      <div id="filters-chart"></div>
+    </div>
+    <div id="timeline-container">
+      <div class="chart">
+        <h4>
+          mes
+          <a class="reset" href='javascript:resetFilter("mes");'>reset</a>
+        </h4>
+        <div id="bar-chart-mes"></div>
+      </div>
+    </div>
 
-  <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
-    integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
-    crossorigin=""></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.0.0/papaparse.js"
-    integrity="sha256-RvQEzpawNgXWAvdOhEjTuvrpZuj71yDH2phPmZJ6yks=" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"
-    integrity="sha256-65UqrlgGoRAnKfKRuriH3eeDrOhZgZo1SCenduc+SGo=" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/d3"></script>
-  <script src="https://unpkg.com/crossfilter2"></script>
-  <script src="https://unpkg.com/dc/dc.js"></script>
-  <script src="https://d3js.org/d3-scale.v3.min.js"></script>
-  <script src="src/index.js"></script>
-</body>
-
+    <script
+      src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
+      integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
+      crossorigin=""
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.0.0/papaparse.js"
+      integrity="sha256-RvQEzpawNgXWAvdOhEjTuvrpZuj71yDH2phPmZJ6yks="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"
+      integrity="sha256-65UqrlgGoRAnKfKRuriH3eeDrOhZgZo1SCenduc+SGo="
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://unpkg.com/d3"></script>
+    <script src="https://unpkg.com/crossfilter2"></script>
+    <script src="https://unpkg.com/dc/dc.js"></script>
+    <script src="https://d3js.org/d3-scale.v3.min.js"></script>
+    <script src="src/index.js"></script>
+  </body>
 </html>

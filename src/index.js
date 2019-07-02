@@ -55,18 +55,25 @@ let selectedState = "";
 
 const filtersChart = document.getElementById("filters-chart");
 
+const dateFormatSpecifier = '%Y-%m-%d';
+const dateFormat = d3.timeFormat(dateFormatSpecifier);
+const dateFormatParser = d3.timeParse(dateFormatSpecifier);
+
 const loadData = map => {
   console.log("loading data");
-  Papa.parse("/src/data/datatran2018.csv", {
+
+
+  Papa.parse("src/data/datatran2018.csv", {
     delimiter: ";",
     header: true,
     download: true,
     complete: results => {
       console.log("Data Loaded");
       console.log(results);
-      dataLoaded(map, results.data.slice(0, 1000));
+      dataLoaded(map, results.data.slice(0));
       addPieFiltersElements();
       addBarFiltersElements();
+      addTimelineChartFilter()
     }
   });
 };
@@ -205,9 +212,49 @@ const addPieChartFilter = field => {
   charts[field].render();
 };
 
+const addTimelineChartFilter = (field = 'mes') => {
+
+  charts[field] = dc.barChart(`#bar-chart-${field}`);
+
+  dimensions[field] = dataFiltered.dimension(function (d) {
+    return d['mes'];
+  });
+  dimensionsGroup[field] = dimensions[field].group().reduceCount();
+
+  charts[field]
+    .width(1000)
+    .height(150)
+    .margins({ top: 10, right: 40, bottom: 20, left: 40 })
+    .dimension(dimensions[field])
+    .group(dimensionsGroup[field])
+    .filterPrinter(function (filters) {
+      rd = dimensions[field].filter(filters[0]);
+      nd = rd.top(Infinity);
+      refreshPoints(nd);
+      return filters;
+    })
+    .centerBar(true)
+    .gap(1)
+    .x(d3.scaleTime().domain([new Date(2018, 0, 1), new Date(2018, 11, 31)]))
+    // .round(d3.timeMonth.round)
+    // .alwaysUseRounding(true)
+    .xUnits(() => 20);
+
+  charts[field].xAxis().tickFormat(v =>
+    new Date(v).toLocaleString('pt-br', { month: 'long' })
+  );
+  charts[field].yAxis().ticks(5);
+  charts[field].render();
+};
+
 
 const dataLoaded = (map, points) => {
-  data = points;
+  data = points
+
+  data.forEach(d => {
+    d.mes = d3.timeMonth(dateFormatParser(d['data_inversa']))
+  })
+
   dataFiltered = crossfilter(data);
 
   markers = convertPointsToMarkers(points);
