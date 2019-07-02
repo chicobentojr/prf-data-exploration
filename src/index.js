@@ -63,7 +63,7 @@ const loadData = map => {
   console.log("loading data");
 
 
-  Papa.parse("src/data/datatran2018.csv", {
+  Papa.parse("src/data/datatran2018-novo.csv", {
     delimiter: ";",
     header: true,
     download: true,
@@ -194,7 +194,7 @@ const addPieChartFilter = field => {
   dimensionsGroup[field] = dimensions[field].group().reduceCount();
 
   charts[field]
-    .cap(5)
+    .cap(7)
     .othersLabel('outros')
     .width(300)
     .height(180)
@@ -230,6 +230,7 @@ const addTimelineChartFilter = (field = 'mes') => {
     .margins({ top: 10, right: 40, bottom: 20, left: 40 })
     .dimension(dimensions[field])
     .group(dimensionsGroup[field])
+    .elasticY(true)
     .filterPrinter(function (filters) {
       rd = dimensions[field].filter(filters[0]);
       nd = rd.top(Infinity);
@@ -511,6 +512,10 @@ const refreshPoints = newPoints => {
 const main = () => {
   map = plotMap();
   loadData(map);
+
+  $("#accordion").accordion({
+    collapsible: true
+  });
 };
 
 window.onload = main;
