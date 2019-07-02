@@ -94,8 +94,11 @@ const convertPointsToMarkers = points => {
 
 const resetFilter = (key) => {
   charts[key].filterAll();
-  const newPoints = dataFiltered.dimension(d => d).top(Infinity)
+  // const newPoints = dataFiltered.dimension(d => d).top(Infinity)
+  // const newPoints = charts[key].filterAll().dimension().top(Infinity)
+  const newPoints = dimensions[key].filterAll().top(Infinity)
   refreshPoints(newPoints)
+  dc.redrawAll()
 }
 
 const resetSelection = () => {
@@ -120,8 +123,8 @@ const addBarFiltersElements = () => {
       addBarChartFilter(k);
     }, 0);
   });
-  dimensions['uf'] = dataFiltered.dimension(d => d['uf'])
-  dimensionsGroup['uf'] = dimensions['uf'].group().reduceCount();
+  // dimensions['uf'] = dataFiltered.dimension(d => d['uf'])
+  // dimensionsGroup['uf'] = dimensions['uf'].group().reduceCount();
   dc.renderAll();
 };
 
@@ -129,7 +132,7 @@ const addPieFiltersElements = () => {
   PIE_FILTERS.forEach((k) => {
     filtersChart.innerHTML += `
                 <div class='chart'>
-                    <h4>${k} <a class='reset' href='javascript:resetFilter("${k}");'>reset</a></h4>
+                    <h4>${k}</h4>
                     <div id='pie-chart-${k}'>
                     </div>
                 </div>
@@ -138,8 +141,8 @@ const addPieFiltersElements = () => {
       addPieChartFilter(k);
     }, 0);
   });
-  dimensions['uf'] = dataFiltered.dimension(d => d['uf'])
-  dimensionsGroup['uf'] = dimensions['uf'].group().reduceCount();
+  // dimensions['uf'] = dataFiltered.dimension(d => d['uf'])
+  // dimensionsGroup['uf'] = dimensions['uf'].group().reduceCount();
   dc.renderAll();
 };
 
@@ -203,11 +206,11 @@ const addPieChartFilter = field => {
     // })
     .dimension(dimensions[field])
     .group(dimensionsGroup[field])
-    .filterPrinter(function (filters) {
-      rd = dimensions[field].filter(filters[0]);
+    .on("filtered", (chart) => {
+      const filters = chart.filters()
+      rd = dimensions[field].filter(v => filters.length > 0 ? filters.indexOf(v) > -1 : true);
       nd = rd.top(Infinity);
       refreshPoints(nd);
-      return filters;
     })
   charts[field].render();
 };
@@ -256,6 +259,9 @@ const dataLoaded = (map, points) => {
   })
 
   dataFiltered = crossfilter(data);
+
+  dimensions['uf'] = dataFiltered.dimension(d => d['uf'])
+  dimensionsGroup['uf'] = dimensions['uf'].group().reduceCount();
 
   markers = convertPointsToMarkers(points);
 
@@ -317,24 +323,31 @@ const loadGeoData = (map) => {
 
 
 const updateFilters = (newData) => {
-  console.log('dataFilterd', dataFiltered.allFiltered().length)
+  console.log('dataFilterd all len', dataFiltered.allFiltered().length)
   dataFiltered = crossfilter(newData)
-  BAR_FILTERS.forEach(f => {
-    const group = dataFiltered.dimension(d => d[f]).group().reduceCount()
-    charts[f].group(group)
+
+  const allFilters = ['uf', ...BAR_FILTERS, ...PIE_FILTERS]
+
+  allFilters.forEach(f => {
+    dimensions[f] = dataFiltered.dimension(d => d[f])
+    dimensionsGroup[f] = dimensions[f].group().reduceCount()
+    // const group = dataFiltered.dimension(d => d[f]).group().reduceCount()
+    if (charts.hasOwnProperty(f)) {
+      charts[f].group(dimensionsGroup[f])
+    }
   })
-  console.log('dataFilterd', dataFiltered)
+  console.log('dataFilterd all len', dataFiltered.allFiltered().length)
   dc.redrawAll();
 
 }
 
 const onStateSelected = (e) => {
   console.log('zoom clicked');
-  console.log('dataFiltered :', dataFiltered.allFiltered().length);
+  console.log('dataFiltered all len:', dataFiltered.allFiltered().length);
 
   const state = e.target.feature.properties.Name
 
-  updateFilters(data);
+  // updateFilters(data);
 
   if (selectedState === state) {
     selectedState = null;
@@ -343,15 +356,17 @@ const onStateSelected = (e) => {
     selectedState = state;
   }
 
-  dataFiltered.dimension(d => d['uf']).filter(selectedState)
+  // dataFiltered.dimension(d => d['uf']).filter(selectedState)
+  const newPoints = dataFiltered.dimension(d => d['uf']).filter(selectedState).top(Infinity)
 
   console.log('dataFiltered :', dataFiltered.size());
+  console.log('newPoints size :', newPoints.length);
 
   map.fitBounds(e.target.getBounds());
   dc.redrawAll();
   plotStates()
 
-  refreshPoints(dataFiltered.allFiltered())
+  refreshPoints(newPoints)
 }
 
 const onMouseOverState = (e) => {
@@ -459,18 +474,18 @@ const plotMap = () => {
     position: 'bottomright'
   }).addTo(map);
 
-  map.on("zoomend", (e) => {
-    const zoomValue = e.target._zoom
-    console.log('zoomend', zoomValue)
+  // map.on("zoomend", (e) => {
+  //   // const zoomValue = e.target._zoom
+  //   // console.log('zoomend', zoomValue)
 
-    // if (zoomValue <= 5) {
-    //   dataFiltered = crossfilter(data);
-    //   // dataFiltered.add(data);
-    //   // console.log('dataFiltered', dataFiltered.size())
-    //   // dc.redrawAll();
-    //   plotStates(dataFiltered)
-    // }
-  })
+  //   // if (zoomValue <= 5) {
+  //   //   dataFiltered = crossfilter(data);
+  //   //   // dataFiltered.add(data);
+  //   //   // console.log('dataFiltered', dataFiltered.size())
+  //   //   // dc.redrawAll();
+  //   //   plotStates(dataFiltered)
+  //   // }
+  // })
 
   return map;
 };
