@@ -6,6 +6,15 @@ const BAR_FILTERS = [
 
 const PIE_FILTERS = ['dia_semana', 'causa_acidente']
 
+const PIE_CONFIG = {
+  'dia_semana': {
+    'cap': Infinity
+  },
+  'causa_acidente': {
+    'cap': 3
+  }
+}
+
 
 const FIELDS = {
   "data_inversa": "Data",
@@ -70,7 +79,7 @@ const loadData = map => {
     complete: results => {
       console.log("Data Loaded");
       console.log(results);
-      dataLoaded(map, results.data.slice(0, 100));
+      dataLoaded(map, results.data.slice(0));
       addPieFiltersElements();
       addBarFiltersElements();
       addTimelineChartFilter()
@@ -198,15 +207,18 @@ const addPieChartFilter = field => {
   dimensionsGroup[field] = dimensions[field].group().reduceCount();
 
   charts[field]
-    .cap(7)
-    .othersLabel('outros')
-    .width(300)
-    .height(180)
-    .radius(300)
+    .cap(PIE_CONFIG[field]['cap'])
+    .othersLabel('Outros')
+    .width(320)
+    .height(350)
+    .radius(100)
     .innerRadius(30)
+    .legend(dc.legend())
+    .label(() => '')
     // .label((g) => {
-    //   console.log(g)
-    //   return g.key.split('-')[0]
+    //   return ''
+    //   // console.log(g)
+    //   // return g.key.split('-')[0]
     // })
     .dimension(dimensions[field])
     .group(dimensionsGroup[field])
