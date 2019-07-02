@@ -16,6 +16,7 @@ body {
   position: fixed;
   min-width: 20em;
   margin: 0.5em;
+  font-family: "Lato", sans-serif !important;
   /* padding: 1em; */
   /* background-color: #fff; */
   max-height: 30em;
@@ -32,7 +33,7 @@ body {
   position: fixed;
   min-width: 100%;
   padding: 0.5em;
-  margin: 0.5em;
+  /* margin: 0.5em; */
   background-color: #fff;
   /* max-height: 12em; */
 }
@@ -45,7 +46,7 @@ body {
 
 .state-info {
   padding: 6px 8px;
-  font: 14px/16px Arial, Helvetica, sans-serif;
+  font: 14px/16px "Lato", sans-serif;
   background: white;
   background: rgba(255, 255, 255, 0.8);
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
@@ -54,4 +55,12 @@ body {
 .state-info h4 {
   margin: 0 0 5px;
   color: #777;
+}
+
+div {
+  font-family: "Lato", sans-serif !important;
+}
+
+.reset {
+  color: #aaa !important;
 }

@@ -70,7 +70,7 @@ const loadData = map => {
     complete: results => {
       console.log("Data Loaded");
       console.log(results);
-      dataLoaded(map, results.data.slice(0));
+      dataLoaded(map, results.data.slice(0, 100));
       addPieFiltersElements();
       addBarFiltersElements();
       addTimelineChartFilter()
@@ -114,9 +114,12 @@ const addBarFiltersElements = () => {
   BAR_FILTERS.map((k, i) => {
     filtersChart.innerHTML += `
                 <div class='chart'>
-                    <h4>${k} <a class='reset' href='javascript:resetFilter("${k}");'>reset</a></h4>
-                    <div id='bar-chart-${k}'>
-                    </div>
+                  <div id='bar-chart-${k}'>
+                    <h4>${FIELDS[k]} <a class='reset'
+                        href='javascript:resetFilter("${k}");'
+                        style="display: none;">reset</a>
+                    </h4>
+                  </div>
                 </div>
             `;
     setTimeout(function () {
@@ -131,11 +134,12 @@ const addBarFiltersElements = () => {
 const addPieFiltersElements = () => {
   PIE_FILTERS.forEach((k) => {
     filtersChart.innerHTML += `
-                <div class='chart'>
-                    <h4>${k}</h4>
-                    <div id='pie-chart-${k}'>
-                    </div>
-                </div>
+    <div class='chart'>
+    <div id='pie-chart-${k}'>
+      <h4>${FIELDS[k]}
+      </h4>
+    </div>
+  </div>
             `;
     setTimeout(function () {
       addPieChartFilter(k);
@@ -299,7 +303,9 @@ const loadGeoData = (map) => {
           ${(props ?
           `<b>${props.Name}</b> ${props.Description}<br>
            <b>Quantidade: </b> ${props.Value}`
-          : (selectedState ? `${selectedState} selecionado` : 'Selecione um estado'))}`;
+          : (selectedState ?
+            `${selectedState} selecionado <br> <a href="javascript:resetSelection();">Mostrar todos</a>`
+            : 'Selecione um estado'))}`;
     };
 
     infoDetailControl.addTo(map);

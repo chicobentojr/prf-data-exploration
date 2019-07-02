@@ -6,6 +6,10 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>PRF Data Explorer</title>
     <link
+      href="https://fonts.googleapis.com/css?family=Lato&display=swap"
+      rel="stylesheet"
+    />
+    <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
       integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
@@ -30,17 +34,24 @@
       <div id="accordion">
         <div>Menu</div>
         <div id="filters-chart">
-          <a href="javascript:resetSelection();">reset selection</a>
+          <!-- <a href="javascript:resetSelection();">reset selection</a> -->
         </div>
       </div>
     </div>
     <div id="timeline-container">
       <div class="chart">
-        <h4>
+        <!-- <h4>
           mes
-          <a class="reset" href='javascript:resetFilter("mes");'>reset</a>
-        </h4>
-        <div id="bar-chart-mes"></div>
+          
+        </h4> -->
+        <div id="bar-chart-mes">
+          <a
+            class="reset"
+            style="display: none"
+            href='javascript:resetFilter("mes");'
+            >reset</a
+          >
+        </div>
       </div>
     </div>
 
