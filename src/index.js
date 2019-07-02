@@ -187,8 +187,9 @@ const addBarChartFilter = field => {
     .x(
       d3
         .scaleLinear()
-        .domain([min - 1, max + 1])
-        .rangeRound([0, 500])
+        // .domain([min - 1, max + 1])
+        .domain([0, 10])
+      // .rangeRound([0, 500])
     );
   charts[field].xAxis().tickFormat(function (v) {
     return v;
@@ -345,7 +346,7 @@ const updateFilters = (newData) => {
   console.log('dataFilterd all len', dataFiltered.allFiltered().length)
   dataFiltered = crossfilter(newData)
 
-  const allFilters = ['uf', ...BAR_FILTERS, ...PIE_FILTERS]
+  const allFilters = ['uf', 'mes', ...BAR_FILTERS, ...PIE_FILTERS]
 
   allFilters.forEach(f => {
     dimensions[f] = dataFiltered.dimension(d => d[f])
@@ -353,6 +354,7 @@ const updateFilters = (newData) => {
     // const group = dataFiltered.dimension(d => d[f]).group().reduceCount()
     if (charts.hasOwnProperty(f)) {
       charts[f].group(dimensionsGroup[f])
+      charts[f].filterAll()
     }
   })
   console.log('dataFilterd all len', dataFiltered.allFiltered().length)
