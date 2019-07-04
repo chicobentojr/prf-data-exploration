@@ -3,7 +3,6 @@ const BAR_FILTERS = [
   'feridos_graves', 'ilesos', 'ignorados',
   'feridos', 'veiculos'
 ]
-
 const PIE_FILTERS = ['dia_semana', 'causa_acidente']
 
 const PIE_CONFIG = {
@@ -14,7 +13,6 @@ const PIE_CONFIG = {
     'cap': 3
   }
 }
-
 
 const FIELDS = {
   "data_inversa": "Data",
@@ -69,8 +67,6 @@ const dateFormatParser = d3.timeParse(dateFormatSpecifier);
 
 const loadData = map => {
   console.log("loading data");
-
-
   Papa.parse("src/data/datatran2018-novo.csv", {
     delimiter: ";",
     header: true,
@@ -79,10 +75,6 @@ const loadData = map => {
       console.log("Data Loaded");
       console.log(results);
       dataLoaded(map, results.data.slice(0));
-      addPieFiltersElements();
-      addBarFiltersElements();
-      addTimelineChartFilter()
-
     }
   });
 };
@@ -110,13 +102,14 @@ const resetFilter = (key) => {
   dc.redrawAll()
 }
 
-const resetSelection = () => {
+const showAllRecords = () => {
   if (markersLayerGroup) {
     markersLayerGroup.clearLayers();
   }
   selectedState = ""
   updateFilters(data)
   plotStates()
+  updateRecordCounterValue(data.length)
 }
 
 const addBarFiltersElements = () => {
@@ -286,10 +279,17 @@ const dataLoaded = (map, points) => {
   // markersLayerGroup = L.layerGroup(markers).addTo(map);
 
   // addHeatMap(map, data)
-  loadGeoData(map);
+  loadStatesPolygons(map);
+
+  addPieFiltersElements();
+  addBarFiltersElements();
+  addTimelineChartFilter();
+
+  updateRecordCounterValue(data.length)
+  showRecordCounter();
 };
 
-const loadGeoData = (map) => {
+const loadStatesPolygons = (map) => {
   console.log('plotting cloropleth map')
   d3.json('src/utils/brasil-estados.geojson').then((states) => {
     console.log('data :', states);
@@ -317,7 +317,7 @@ const loadGeoData = (map) => {
           `<b>${props.Name}</b> ${props.Description}<br>
            <b>Quantidade: </b> ${props.Value}`
           : (selectedState ?
-            `${selectedState} selecionado <br> <a href="javascript:resetSelection();">Mostrar todos</a>`
+            `${selectedState} selecionado <br> <a href="javascript:showAllRecords();">Mostrar todos</a>`
             : 'Selecione um estado'))}`;
     };
 
@@ -326,7 +326,6 @@ const loadGeoData = (map) => {
     plotStates(dataFiltered)
 
     document.querySelector('.loading-screen').style.display = 'none';
-
   })
 }
 
@@ -480,9 +479,9 @@ const plotMap = () => {
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
 
-  L.control.zoom({
-    position: 'bottomright'
-  }).addTo(map);
+  // L.control.zoom({
+  //   position: 'bottomright'
+  // }).addTo(map);
 
   // map.on("zoomend", (e) => {
   //   // const zoomValue = e.target._zoom
@@ -517,6 +516,17 @@ const refreshPoints = newPoints => {
     plotStates(newDataFiltered)
   }
 };
+
+const updateRecordCounterValue = (value) => {
+  document.querySelector('.data-count .filter-count').innerText = value
+}
+
+const showRecordCounter = () => {
+  console.log('data count')
+  dc.dataCount('.data-count')
+    .crossfilter(dataFiltered)
+    .groupAll(dataFiltered.groupAll())
+}
 
 const main = () => {
   map = plotMap();
