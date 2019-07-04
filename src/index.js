@@ -56,7 +56,6 @@ let dimensionsGroup = {};
 
 let choroMap = null;
 let geoStates = null;
-let geoCities = null;
 
 let infoDetailControl = null;
 
@@ -83,6 +82,7 @@ const loadData = map => {
       addPieFiltersElements();
       addBarFiltersElements();
       addTimelineChartFilter()
+
     }
   });
 };
@@ -325,19 +325,8 @@ const loadGeoData = (map) => {
 
     plotStates(dataFiltered)
 
-  })
-  d3.json('src/utils/brasil-municipios.geojson').then((cities) => {
-    console.log('cities :', cities);
-    console.log('cities feat', cities.features[0])
-    cities.features = cities.features.map(f => {
-      return {
-        ...f,
-        geometry: { ...f.geometry, type: "Polygon", coordinates: [f.geometry.coordinates] }
-      }
-    })
-    geoCities = cities;
+    document.querySelector('.loading-screen').style.display = 'none';
 
-    console.log('geoCities :', geoCities);
   })
 }
 
