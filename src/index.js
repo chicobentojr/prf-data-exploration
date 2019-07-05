@@ -1,17 +1,20 @@
-const BAR_FILTERS = [
-  'pessoas', 'mortos', 'feridos_leves',
-  'feridos_graves', 'ilesos', 'ignorados',
-  'feridos', 'veiculos'
-]
-const PIE_FILTERS = ['dia_semana', 'causa_acidente']
+const FILTER_TYPE_BAR = 'bar'
+const FILTER_TYPE_PIE = 'pie'
 
-const PIE_CONFIG = {
-  'dia_semana': {
-    'cap': Infinity
-  },
-  'causa_acidente': {
-    'cap': 3
-  }
+const ALL_FILTERS = {
+  // Bar
+  'pessoas': { type: FILTER_TYPE_BAR },
+  'mortos': { type: FILTER_TYPE_BAR },
+  'feridos_leves': { type: FILTER_TYPE_BAR },
+  'feridos_graves': { type: FILTER_TYPE_BAR },
+  'ilesos': { type: FILTER_TYPE_BAR },
+  'ignorados': { type: FILTER_TYPE_BAR },
+  'feridos': { type: FILTER_TYPE_BAR },
+  'veiculos': { type: FILTER_TYPE_BAR },
+
+  // Pie
+  'dia_semana': { type: FILTER_TYPE_PIE, cap: Infinity },
+  'causa_acidente': { type: FILTER_TYPE_PIE, cap: 3 },
 }
 
 const FIELDS = {
@@ -41,6 +44,7 @@ const FIELDS = {
   "delegacia": "Delegacia"
 }
 
+
 let map = null;
 let markers = null;
 let markersLayerGroup = null;
@@ -58,6 +62,8 @@ let geoStates = null;
 let infoDetailControl = null;
 
 let selectedState = "";
+let selectedFilters = ['dia_semana', 'causa_acidente', 'pessoas', 'mortos']
+
 
 const filtersChart = document.getElementById("filters-chart");
 
@@ -110,46 +116,45 @@ const showAllRecords = () => {
   updateFilters(data)
   plotStates()
   updateRecordCounterValue(data.length)
+  infoDetailControl.update()
+  map.setZoom(4)
 }
 
-const addBarFiltersElements = () => {
-  BAR_FILTERS.map((k, i) => {
-    filtersChart.innerHTML += `
-                <div class='chart'>
-                  <div id='bar-chart-${k}'>
-                    <h4>${FIELDS[k]} <a class='reset'
-                        href='javascript:resetFilter("${k}");'
-                        style="display: none;">reset</a>
+const addFilter = (field) => {
+  const filter = ALL_FILTERS[field]
+
+  switch (filter.type) {
+    case FILTER_TYPE_BAR:
+      addBarFiltersElement(field)
+      break;
+    case FILTER_TYPE_PIE:
+      addPieFiltersElement(field)
+      break;
+  }
+}
+
+const addBarFiltersElement = (field) => {
+  filtersChart.innerHTML += `
+                  <div id='bar-chart-${field}'>
+                    <h4 class="chart-title">${FIELDS[field]} <a class='reset'
+                        href='javascript:resetFilter("${field}");'
+                        style="display: none;">limpar</a>
                     </h4>
                   </div>
-                </div>
             `;
-    setTimeout(function () {
-      addBarChartFilter(k);
-    }, 0);
-  });
-  // dimensions['uf'] = dataFiltered.dimension(d => d['uf'])
-  // dimensionsGroup['uf'] = dimensions['uf'].group().reduceCount();
-  dc.renderAll();
+  setTimeout(function () {
+    addBarChartFilter(field);
+  }, 0);
 };
 
-const addPieFiltersElements = () => {
-  PIE_FILTERS.forEach((k) => {
-    filtersChart.innerHTML += `
-    <div class='chart'>
-    <div id='pie-chart-${k}'>
-      <h4>${FIELDS[k]}
-      </h4>
-    </div>
-  </div>
-            `;
-    setTimeout(function () {
-      addPieChartFilter(k);
-    }, 0);
-  });
-  // dimensions['uf'] = dataFiltered.dimension(d => d['uf'])
-  // dimensionsGroup['uf'] = dimensions['uf'].group().reduceCount();
-  dc.renderAll();
+const addPieFiltersElement = (field) => {
+  filtersChart.innerHTML += `
+    <div id='pie-chart-${field}'>
+      <h4 class="chart-title">${FIELDS[field]}</h4>
+    </div>`;
+  setTimeout(function () {
+    addPieChartFilter(field);
+  }, 0);
 };
 
 const addBarChartFilter = field => {
@@ -165,12 +170,13 @@ const addBarChartFilter = field => {
   const min = Math.min.apply(Math, dimensionsGroup[field].top(Infinity).map(x => x.key))
 
   charts[field]
-    .width(300)
+    .width(270)
     .height(180)
     .margins({ top: 10, right: 50, bottom: 30, left: 40 })
     .dimension(dimensions[field])
     .group(dimensionsGroup[field])
     .elasticY(true)
+    .round(dc.round.floor)
     .filterPrinter(function (filters) {
       rd = dimensions[field].filter(filters[0]);
       nd = rd.top(Infinity);
@@ -182,7 +188,6 @@ const addBarChartFilter = field => {
         .scaleLinear()
         // .domain([min - 1, max + 1])
         .domain([0, 10])
-      // .rangeRound([0, 500])
     );
   charts[field].xAxis().tickFormat(function (v) {
     return v;
@@ -190,6 +195,15 @@ const addBarChartFilter = field => {
   charts[field].yAxis().ticks(5); ''
   charts[field].render();
 };
+
+const getPieLabel = (label) => {
+  words = label.split(' ')
+
+  if (words.length > 3) {
+    return words.slice(0, 3).join(' ') + ' ...'
+  }
+  return label
+}
 
 const addPieChartFilter = field => {
 
@@ -201,15 +215,15 @@ const addPieChartFilter = field => {
   dimensionsGroup[field] = dimensions[field].group().reduceCount();
 
   charts[field]
-    .cap(PIE_CONFIG[field]['cap'])
+    .cap(ALL_FILTERS[field]['cap'])
     .othersLabel('Outros')
-    .width(320)
-    .height(350)
+    .width(200)
+    .height(180)
     .radius(100)
     .innerRadius(30)
-    .legend(dc.legend())
+    .legend(dc.legend().x(200).legendText((d) => getPieLabel(d.name)))
     .label(() => '')
-    // .label((g) => {
+    // .label((g) => getPieLabel(g.key))
     //   return ''
     //   // console.log(g)
     //   // return g.key.split('-')[0]
@@ -222,6 +236,7 @@ const addPieChartFilter = field => {
       nd = rd.top(Infinity);
       refreshPoints(nd);
     })
+  // charts[field].margins().bottom = 110
   charts[field].render();
 };
 
@@ -281,8 +296,14 @@ const dataLoaded = (map, points) => {
   // addHeatMap(map, data)
   loadStatesPolygons(map);
 
-  addPieFiltersElements();
-  addBarFiltersElements();
+  // selectedFilters.forEach(filter => {
+  Object.keys(ALL_FILTERS).forEach(filter => {
+    console.log('adding filter', filter)
+    addFilter(filter)
+  })
+
+  // addPieFiltersElement();
+  // addBarFiltersElement();
   addTimelineChartFilter();
 
   updateRecordCounterValue(data.length)
@@ -334,7 +355,7 @@ const updateFilters = (newData) => {
   console.log('dataFilterd all len', dataFiltered.allFiltered().length)
   dataFiltered = crossfilter(newData)
 
-  const allFilters = ['uf', 'mes', ...BAR_FILTERS, ...PIE_FILTERS]
+  const allFilters = ['uf', 'mes', ...Object.keys(ALL_FILTERS)]
 
   allFilters.forEach(f => {
     dimensions[f] = dataFiltered.dimension(d => d[f])
@@ -479,22 +500,15 @@ const plotMap = () => {
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
 
-  // L.control.zoom({
-  //   position: 'bottomright'
-  // }).addTo(map);
+  const counterControl = L.control();
 
-  // map.on("zoomend", (e) => {
-  //   // const zoomValue = e.target._zoom
-  //   // console.log('zoomend', zoomValue)
+  counterControl.onAdd = function () {
+    this._div = L.DomUtil.create('div', 'data-count');
+    this._div.innerHTML = `<span class='filter-count'></span> acidentes encontrados.`
+    return this._div;
+  };
 
-  //   // if (zoomValue <= 5) {
-  //   //   dataFiltered = crossfilter(data);
-  //   //   // dataFiltered.add(data);
-  //   //   // console.log('dataFiltered', dataFiltered.size())
-  //   //   // dc.redrawAll();
-  //   //   plotStates(dataFiltered)
-  //   // }
-  // })
+  counterControl.addTo(map);
 
   return map;
 };
@@ -518,23 +532,19 @@ const refreshPoints = newPoints => {
 };
 
 const updateRecordCounterValue = (value) => {
-  document.querySelector('.data-count .filter-count').innerText = value
+  document.querySelector('.data-count .filter-count').innerText = d3.format(',')(value).replace(',', '.')
 }
 
 const showRecordCounter = () => {
-  console.log('data count')
   dc.dataCount('.data-count')
     .crossfilter(dataFiltered)
     .groupAll(dataFiltered.groupAll())
+    .formatNumber((n) => d3.format(',')(n).replace(',', '.'))
 }
 
 const main = () => {
   map = plotMap();
   loadData(map);
-
-  $("#accordion").accordion({
-    collapsible: true
-  });
 };
 
 window.onload = main;
