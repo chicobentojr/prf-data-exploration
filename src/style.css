@@ -32,7 +32,6 @@ body {
   /* flex-direction: column; */
   /* justify-content: center; */
   /* flex-wrap: wrap; */
-  
 }
 
 #filters-chart {
@@ -82,7 +81,8 @@ body {
   /* background-color: black; */
 }
 
-.state-info, .data-count {
+.state-info,
+.data-count {
   padding: 6px 8px;
   font: 14px/16px "Lato", sans-serif;
   background: white;
@@ -91,7 +91,8 @@ body {
   border-radius: 5px;
   margin-bottom: 0%;
 }
-.state-info h4, .data-count h4 {
+.state-info h4,
+.data-count h4 {
   margin: 0 0 5px;
   color: #777;
 }
@@ -104,8 +105,9 @@ div {
   color: #aaa !important;
 }
 
-#pie-chart-dia_semana svg { width: 350px; }
-#pie-chart-causa_acidente svg { width: 350px; }
+.pie-chart svg {
+  width: 350px;
+}
 
 /* Loading */
 
@@ -138,7 +140,7 @@ div {
   margin: 1px;
   border-radius: 50%;
   border: 5px solid #fff;
-  border-color:#fff transparent #fff transparent;
+  border-color: #fff transparent #fff transparent;
   animation: loading-icon 1.2s linear infinite;
 }
 @keyframes loading-icon {

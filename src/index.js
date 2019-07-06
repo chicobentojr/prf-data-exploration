@@ -14,8 +14,11 @@ const ALL_FILTERS = {
 
   // Pie
   'dia_semana': { type: FILTER_TYPE_PIE, cap: Infinity },
+  'hour': { type: FILTER_TYPE_PIE, cap: Infinity },
   'causa_acidente': { type: FILTER_TYPE_PIE, cap: 3 },
 }
+
+const HOURS_GROUP = ['madrugada', 'manhã', 'tarde', 'noite']
 
 const FIELDS = {
   "data_inversa": "Data",
@@ -41,9 +44,11 @@ const FIELDS = {
   "feridos": "Feridos",
   "veiculos": "Veículos",
   "regional": "Regional",
-  "delegacia": "Delegacia"
-}
+  "delegacia": "Delegacia",
 
+  // Custom
+  "hour": "Horário"
+}
 
 let map = null;
 let markers = null;
@@ -94,7 +99,8 @@ const getPointDetails = point => {
 const convertPointsToMarkers = points => {
   return points.map(p =>
     L.circleMarker([p.latitude.replace(',', '.'), p.longitude.replace(',', '.')], {
-      color: "#3388ff"
+      color: "#3388ff",
+      radius: 5,
     }).bindPopup(getPointDetails(p))
   );
 }
@@ -149,7 +155,7 @@ const addBarFiltersElement = (field) => {
 
 const addPieFiltersElement = (field) => {
   filtersChart.innerHTML += `
-    <div id='pie-chart-${field}'>
+    <div id='pie-chart-${field}' class="pie-chart">
       <h4 class="chart-title">${FIELDS[field]}</h4>
     </div>`;
   setTimeout(function () {
@@ -282,6 +288,9 @@ const dataLoaded = (map, points) => {
 
   data.forEach(d => {
     d.mes = d3.timeMonth(dateFormatParser(d['data_inversa']))
+
+    const hour = Number.parseInt(d['horario'].slice(0, 2))
+    d.hour = HOURS_GROUP[Math.floor(hour / 6)]
   })
 
   dataFiltered = crossfilter(data);
