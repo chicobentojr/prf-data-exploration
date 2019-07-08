@@ -16,6 +16,7 @@ const ALL_FILTERS = {
   'dia_semana': { type: FILTER_TYPE_PIE, cap: Infinity },
   'hour': { type: FILTER_TYPE_PIE, cap: Infinity },
   'causa_acidente': { type: FILTER_TYPE_PIE, cap: 9 },
+  'tipo_acidente': { type: FILTER_TYPE_PIE, cap: 9 },
 }
 
 const HOURS_GROUP = ['madrugada', 'manhã', 'tarde', 'noite']
@@ -502,7 +503,7 @@ const plotMap = (isFullMap) => {
   var map = L.map("map", {
     preferCanvas: true,
     zoomControl: false,
-  }).setView([-30.0699828, -51.1198806], 4);
+  }).setView([-15.0699828, -51.1198806], 4);
 
   const counterControl = L.control();
 
